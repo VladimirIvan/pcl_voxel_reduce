@@ -27,10 +27,16 @@ void PointCloudProcessor::cloud_cb(const sensor_msgs::PointCloud2ConstPtr& cloud
         crop.setMin(box_min);
         crop.filter(*cloud_filtered);
 
-        pcl::VoxelGrid<pcl::PCLPointCloud2> grid;
-        grid.setInputCloud(cloud_filtered);
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_pcl(new pcl::PointCloud<pcl::PointXYZ>());
+        pcl::PointCloud<pcl::PointXYZ> cloud_reduced_pcl;
+        pcl::fromPCLPointCloud2( *cloud_filtered, *cloud_pcl);
+
+        pcl::VoxelGrid<pcl::PointXYZ> grid;
+        grid.setMinimumPointsNumberPerVoxel(static_cast<unsigned int>(min_points_per_voxel_));
+        grid.setInputCloud(cloud_pcl);
         grid.setLeafSize(grid_resolution_, grid_resolution_, grid_resolution_);
-        grid.filter(*cloud_reduced);
+        grid.filter(cloud_reduced_pcl);
+        pcl::toPCLPointCloud2(cloud_reduced_pcl, *cloud_reduced);
 
         // Publish
         pcl_conversions::fromPCL(*cloud_reduced, tmp);
@@ -43,6 +49,7 @@ PointCloudProcessor::PointCloudProcessor() : nh_("~"), tf_listener_()
 {
     nh_.param<std::string>("frame", world_name_, "base_link");
     nh_.param<float>("resolution", grid_resolution_, 0.1f);
+    nh_.param<int>("min_points", min_points_per_voxel_, 0);
     nh_.param<float>("min_x", box_min_x_, -10.0f);
     nh_.param<float>("min_y", box_min_y_, -10.0f);
     nh_.param<float>("min_z", box_min_z_, -10.0f);

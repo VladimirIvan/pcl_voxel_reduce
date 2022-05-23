@@ -30,4 +30,5 @@ protected:
     float box_max_x_;
     float box_max_y_;
     float box_max_z_;
+    int min_points_per_voxel_;
 };
